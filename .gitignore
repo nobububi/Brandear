@@ -1,0 +1,5 @@
+data/
+*.csv
+*.pkl
+*.DS_Store
+.idea/
