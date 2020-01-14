@@ -1,5 +1,13 @@
-data/
+# data
 *.csv
 *.pkl
-*.DS_Store
+
+# macOS
+.DS_Store
+
+# python
+.ipynb_checkpoints/
+__pycache__/
+
+# pycharm
 .idea/
