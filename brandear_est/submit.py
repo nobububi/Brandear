@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 
@@ -14,5 +16,18 @@ def comple_submit_auc(df):
         candidate_aucs_tmp["KaiinID"] = user
         buf.append(candidate_aucs_tmp)
     df_comple = pd.concat(buf)
-    df_colmled = pd.concat([df, df_comple])
+    df_colmled = pd.concat([df, df_comple], sort=False)
     return df_colmled
+
+
+def adjust_sub_form(users, pred, drop=False):
+    sub_data = users.merge(pred, on="KaiinID", how="left")[["KaiinID", "AuctionID", "score"]]
+    sub_data = comple_submit_auc(sub_data)
+    sub_data.sort_values(['KaiinID', 'score'], ascending=[True, False], inplace=True)
+    sub_data['rank'] = sub_data.groupby('KaiinID')['score'].cumcount()
+    sub_valid = sub_data.query("rank < =19")
+    sub_valid = sub_valid.sort_values(['KaiinID', 'score'], ascending=[True, False]).astype(int)
+    if drop:
+        sub_valid.drop(["score", "rank"], axis=1, inplace=True)
+
+    return sub_valid

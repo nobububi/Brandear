@@ -32,8 +32,8 @@ def build_dataset(watch, bid, auction, dset_type, dset_to_period, target_users=N
 
     # 正解データ付与
     if dset_type != "submission":
-        watch_actioned.loc["watch_actioned"] = 1
-        bid_actioned.loc["bid_actioned"] = 1
+        watch_actioned["watch_actioned"] = 1
+        bid_actioned["bid_actioned"] = 1
         dataset = (
             dataset
                 .merge(watch_actioned[["KaiinID", "AuctionID", "watch_actioned"]], on=["KaiinID", "AuctionID"],

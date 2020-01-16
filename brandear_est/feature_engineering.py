@@ -49,7 +49,7 @@ def add_features(dataset, watch, bid, oldest_dtime):
 def add_time_features(df, feature_df, time_col, prefix, oldest_dtime):
     tmp_time_col = f"Tmp{time_col}Delta"
     key_cols = ["KaiinID", "AuctionID"]
-    feature_df.loc[tmp_time_col] = feature_df[time_col].apply(lambda d: (oldest_dtime - d).days)
+    feature_df[tmp_time_col] = feature_df[time_col].apply(lambda d: (oldest_dtime - d).days)
     time_features = (
         feature_df
             .groupby(key_cols)[tmp_time_col]
