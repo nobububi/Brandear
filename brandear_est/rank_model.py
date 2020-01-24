@@ -24,7 +24,7 @@ class LgbLambdaLank():
         sampled_data = (
             pd.concat([
                 data.query("(watch_actioned == 0) & (bid_actioned == 0)")
-                    .sample(n=actioned_data.shape[0] * 10),
+                    .sample(n=actioned_data.shape[0] * 100),
                 actioned_data
             ])
         )
@@ -32,8 +32,10 @@ class LgbLambdaLank():
 
     def adjust_data(self, data):
         data_copy = data.copy()
-        drop_cols = ["KaiinID", "AuctionID", "watch_actioned", "bid_actioned"]
-        data_copy.sort_values("KaiinID", inplace=True)
+        drop_cols = ["KaiinID", "AuctionID", "watch_actioned", "bid_actioned",
+                     "CreateDate", "watch_ua_cnt", "watch_ua_newest", "watch_ua_oldest", "watch_period",
+                     "bid_ua_cnt", "bid_ua_newest", "bid_ua_oldest", "bid_period"]
+        data_copy.sort_values(["KaiinID", "AuctionID"], inplace=True)
 
         if {"watch_actioned", "bid_actioned"} - set(data.columns) == set([]):
             label = np.array(data_copy[["watch_actioned", "bid_actioned"]].astype(int)).max(axis=1)
@@ -56,7 +58,7 @@ class LgbLambdaLank():
         )
 
         lgb_dataset = lgb.Dataset(
-            data=np.array(data_copy.drop(drop_cols, axis=1)),
+            data=np.array(drop(data_copy, drop_cols)),
             label=label,
             weight=weight,
             group=group
@@ -85,7 +87,9 @@ class LgbLambdaLank():
         )
 
     def predict(self, data):
-        drop_cols = ["KaiinID", "AuctionID", "watch_actioned", "bid_actioned"]
+        drop_cols = ["KaiinID", "AuctionID", "watch_actioned", "bid_actioned",
+                     "CreateDate", "watch_ua_cnt", "watch_ua_newest", "watch_ua_oldest", "watch_period",
+                     "bid_ua_cnt", "bid_ua_newest", "bid_ua_oldest", "bid_period"]
         data_copy = data.copy()
         sorted_data = data_copy.sort_values(["KaiinID", "AuctionID"])
         pred = self.sub_model.predict(
