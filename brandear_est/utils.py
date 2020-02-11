@@ -1,8 +1,20 @@
 import re
 import datetime
+import os
 
 import pandas as pd
 import numpy as np
+
+"""
+var_names = []
+var_sizes = []
+for var_name in dir():
+    if not var_name.startswith("_") and sys.getsizeof(eval(var_name)) > 10000: #ここだけアレンジ
+        var_names.append(var_name)
+        var_sizes.append(sys.getsizeof(eval(var_name)))
+var_infos =  pd.DataFrame({"var_name": var_names, "var_size": var_sizes}).sort_values("var_size", ascending=False)
+var_infos
+"""
 
 
 def to_datetime(df):
@@ -13,14 +25,22 @@ def to_datetime(df):
     return df
 
 
-def to_pickle(obj, dirname, filename):
-    now = datetime.datetime.now().strftime("%Y%m%d%H%M")
-    print(filename + " : " + now)
-    obj.to_pickle(dirname + now + "_" + filename)
+def to_pickle(obj, dirname, filename, timestamp=True):
+    if timestamp:
+        now = datetime.datetime.now().strftime("%Y%m%d%H%M")
+        print(filename + " : " + now)
+        obj.to_pickle(dirname + now + "_" + filename)
+    else:
+        obj.to_pickle(dirname + "_" + filename)
 
 
-def read_csv(path_name):
-    df = reduce_mem_usage(pd.read_csv(path_name))
+def df2pkl(df, output_dir, filename):
+    os.makedirs(output_dir, exist_ok=True)
+    df.to_pickle(os.path.join(output_dir, filename))
+
+
+def read_csv(path_name, **kwargs):
+    df = reduce_mem_usage(pd.read_csv(path_name, **kwargs))
     return df
 
 
@@ -94,3 +114,4 @@ def cross_join(df1, df2):
     df2["cross_flg"] = 0
     cross_df = df1.merge(df2, on=["cross_flg"], how="outer").drop("cross_flg", axis=1)
     return cross_df
+

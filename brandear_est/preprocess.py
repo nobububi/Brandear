@@ -1,6 +1,6 @@
 from dateutil.relativedelta import relativedelta
 
-from brandear_est.utils import *
+from .utils import *
 
 
 def build_dataset_base(watch, bid, auction, bid_success, dset_type, period, target_users=None):
@@ -104,3 +104,21 @@ def extract_similar_aucs(target_users, auction, bid, watch, period, key="Shouhin
 
     return similar_aucs
 
+
+def stack_target_actions(target_actions):
+    watch_target = target_actions.query("(watch_actioned == 1)")[["KaiinID", "AuctionID"]]
+    bid_target = target_actions.query("(bid_actioned == 1)")[["KaiinID", "AuctionID"]]
+    watch_target["score"] = 1
+    bid_target["score"] = 2
+    stacked_target_actions = pd.concat([watch_target, bid_target], sort=False)
+    return stacked_target_actions
+
+
+def get_cheat_pred(data, target_actions):
+    actiones = data[["KaiinID", "AuctionID"]].copy()
+    scored_targets = (
+        stack_target_actions(target_actions).groupby(["KaiinID", "AuctionID"], as_index=False).max())
+    cheat_pred = (
+        actiones.merge(scored_targets, on=["KaiinID", "AuctionID"], how="left")
+        .fillna(0).sort_values(["KaiinID", "score"], ascending=["True", "False"]))
+    return cheat_pred

@@ -1,68 +1,17 @@
-import numpy as np
-import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve
+
 
 from .utils import *
+from .preprocess import *
 
 
 def dcg_at_k(r, k):
-    """Score is discounted cumulative gain (dcg)
-    Relevance is positive real values.  Can use binary
-    as the previous methods.
-    Example from
-    http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
-    >>> r = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
-    >>> dcg_at_k(r, 1)
-    3.0
-    >>> dcg_at_k(r, 1, method=1)
-    3.0
-    >>> dcg_at_k(r, 2)
-    5.0
-    >>> dcg_at_k(r, 2, method=1)
-    4.2618595071429155
-    >>> dcg_at_k(r, 10)
-    9.6051177391888114
-    >>> dcg_at_k(r, 11)
-    9.6051177391888114
-    Args:
-        r: Relevance scores (list or numpy) in rank order
-            (first element is the first item)
-        k: Number of results to consider
-        method: If 0 then weights are [1.0, 1.0, 0.6309, 0.5, 0.4307, ...]
-                If 1 then weights are [1.0, 0.6309, 0.5, 0.4307, ...]
-    Returns:
-        Discounted cumulative gain
-    """
     r = np.asfarray(r)[:k]
     return np.sum((2 ** r - 1) / np.log2(np.arange(2, r.size + 2)))
 
 
 def ndcg_at_k(r, k):
-    """Score is normalized discounted cumulative gain (ndcg)
-    Relevance is positive real values.  Can use binary
-    as the previous methods.
-    Example from
-    http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
-    >>> r = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
-    >>> ndcg_at_k(r, 1)
-    1.0
-    >>> r = [2, 1, 2, 0]
-    >>> ndcg_at_k(r, 4)
-    0.9203032077642922
-    >>> ndcg_at_k(r, 4, method=1)
-    0.96519546960144276
-    >>> ndcg_at_k([0], 1)
-    0.0
-    >>> ndcg_at_k([1], 2)
-    1.0
-    Args:
-        r: Relevance scores (list or numpy) in rank order
-            (first element is the first item)
-        k: Number of results to consider
-        method: If 0 then weights are [1.0, 1.0, 0.6309, 0.5, 0.4307, ...]
-                If 1 then weights are [1.0, 0.6309, 0.5, 0.4307, ...]
-    Returns:
-        Normalized discounted cumulative gain
-    """
     dcg_max = dcg_at_k(sorted(r, reverse=True), k)
     if not dcg_max:
         return 0.
@@ -73,26 +22,40 @@ def calc_ndcg(y_true, y_pred, k=20):
     y_pred_cp = y_pred.copy()
 
     actione_true = stack_target_actions(y_true)
-    actione_true["rank"] = k
+    actione_true["rank"] = 100
 
     y_pred_cp['rank'] = y_pred_cp.groupby('KaiinID')['AuctionID'].cumcount()
 
     scored_pred = (
         y_pred_cp.merge(actione_true[["KaiinID", "AuctionID", "score"]], on=["KaiinID", "AuctionID"],
-                     how="left").fillna(0))
+                        how="left").fillna(0))
 
     unchoiced_actiones = (
         left_anti_join(actione_true, y_pred_cp, ["KaiinID", "AuctionID"], ["KaiinID", "AuctionID"]))
 
     scored_actiones = (
         pd.concat([scored_pred, unchoiced_actiones], sort=False)
-        .sort_values(["KaiinID", "rank"], ascending=["True", "True"]))
-
+            .sort_values(["KaiinID", "rank"], ascending=["True", "True"]))
 
     dcgs = scored_actiones.groupby("KaiinID")["score"].apply(lambda s: ndcg_at_k(s.tolist(), k=20))
     ndcg = dcgs.mean()
 
     return ndcg
+
+
+def plot_roc_curve(y_true, y_pred):
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+    plt.plot(fpr, tpr, marker='o')
+    plt.xlabel('FPR: False positive rate')
+    plt.ylabel('TPR: True positive rate')
+    plt.grid()
+
+
+def plot_tpr_fpr(y_true, y_pred):
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+    th_df = pd.DataFrame({"fpr": fpr, "tpr": tpr, "thresholds": thresholds})
+    plt.plot(th_df["thresholds"], th_df["fpr"])
+    plt.plot(th_df["thresholds"], th_df["tpr"])
 
 
 def stack_target_actions(target_actions):
@@ -102,13 +65,3 @@ def stack_target_actions(target_actions):
     bid_target["score"] = 2
     stacked_target_actions = pd.concat([watch_target, bid_target], sort=False)
     return stacked_target_actions
-
-
-def get_cheat_pred(data, target_actions):
-    actiones = data[["KaiinID", "AuctionID"]].copy()
-    scored_targets = (
-        stack_target_actions(target_actions).groupby(["KaiinID", "AuctionID"], as_index=False).max())
-    cheat_pred = (
-        actiones.merge(scored_targets, on=["KaiinID", "AuctionID"], how="left")
-        .fillna(0).sort_values(["KaiinID", "score"], ascending=["True", "False"]))
-    return cheat_pred
