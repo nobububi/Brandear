@@ -14,7 +14,8 @@ class LgbLambdaLank:
                 "nround": 500,
                 "learning_rate": 0.01,
                 "max_depth": 6,
-                "num_leaves": 127
+                "num_leaves": 127,
+                "random_state": 1
             }
         self.params = params
 

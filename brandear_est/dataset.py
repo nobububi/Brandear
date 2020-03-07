@@ -44,14 +44,26 @@ class DataSet:
 
         # 学習データを分割
         kf = KFold(n_splits=4, shuffle=True, random_state=72)
-        for idx_1, idx_2 in kf.split(self.data):
-            # out-of-foldで各カテゴリにおける目的変数の平均を計算
-            target_mean = self.data.iloc[idx_1][[cat_col, self.target_col]].groupby(cat_col)[self.target_col].mean()
-            # 変換後の値を一時配列に格納
-            buf[idx_2] = self.data[cat_col].iloc[idx_2].map(target_mean)
+        if isinstance(cat_col, str):
+            for idx_1, idx_2 in kf.split(self.data):
+                # out-of-foldで各カテゴリにおける目的変数の平均を計算
+                target_mean = self.data.iloc[idx_1][[cat_col, self.target_col]].groupby(cat_col)[self.target_col].mean()
+                # 変換後の値を一時配列に格納
+                buf[idx_2] = self.data[cat_col].iloc[idx_2].map(target_mean)
+            # 変換後のデータで元の変数を置換
+            self.data[cat_col + "_target_mean"] = buf
 
-        # 変換後のデータで元の変数を置換
-        self.data[cat_col + "_target_mean"] = buf
+        elif isinstance(cat_col, list):
+            for idx_1, idx_2 in kf.split(self.data):
+                # out-of-foldで各カテゴリにおける目的変数の平均を計算
+                target_mean = self.data.iloc[idx_1][cat_col + [self.target_col]].groupby(cat_col, as_index=False)[
+                    self.target_col].mean()
+                # 変換後の値を一時配列に格納
+                #                 import pdb;pdb.set_trace()
+                buf[idx_2] = self.data[cat_col].iloc[idx_2].merge(target_mean, on=cat_col, how="left").fillna(0)[
+                    "watch_actioned"]
+                # 変換後のデータで元の変数を置換
+                self.data["_".join(cat_col) + "_target_mean"] = buf
 
     @classmethod
     def under_sampling(cls, dataset, rate=10):
@@ -76,8 +88,19 @@ class DataSet:
 
 
 def target_encode_for_test(train_dataset, test_dataset, cat_col):
-    test_dataset.data[f"{cat_col}_target_mean"] = (
-        test_dataset.data[cat_col].map(
-            train_dataset.data[[cat_col, train_dataset.target_col]].groupby(cat_col)[train_dataset.target_col].mean()
+    if isinstance(cat_col, str):
+        test_dataset.data[f"{cat_col}_target_mean"] = (
+            test_dataset.data[cat_col].map(
+                train_dataset.data[[cat_col, train_dataset.target_col]].groupby(cat_col)[
+                    train_dataset.target_col].mean()
+            )
         )
-    )
+    elif isinstance(cat_col, list):
+        test_dataset.data = (
+            test_dataset.data.merge(
+                train_dataset.data[cat_col + [train_dataset.target_col]]
+                    .groupby(cat_col, as_index=False)[train_dataset.target_col].mean().rename(
+                    columns={train_dataset.target_col: "_".join(cat_col) + "_target_mean"}),
+                on=cat_col, how="left"
+            ).fillna(0)
+        )
