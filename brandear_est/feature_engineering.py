@@ -105,24 +105,6 @@ def add_time_features(dataset, feature_df, time_col, prefix, oldest_dtime):
     return output
 
 
-# def add_value_counts(dataset, feature_df, colsets, prefix, oldest_dtime, time_col):
-#     df_cp = dataset.copy()
-#     feature_valid = feature_df[feature_df[time_col] < oldest_dtime]
-#     for colset in colsets:
-#         if len(colset) == 2:
-#             cnts = (
-#                 feature_valid[colset + ["AuctionID"]].groupby(colset, as_index=False).count()
-#                 .rename(columns={"AuctionID": f"{prefix}_{colset[0]}_{colset[1]}_cnt"})
-#             )
-#         elif len(colset) == 1:
-#             col = colset[0]
-#             cnts = feature_valid[col].value_counts().reset_index().rename(
-#                 columns={"index": col, col: f"{prefix}_{col}_cnt"})
-#
-#         df_cp = df_cp.merge(cnts, on=colset, how="left")
-#     return df_cp
-
-
 def cross_counts(df, col_set):
     if isinstance(col_set, str):
         cnt_col_name = col_set + "_cnt"

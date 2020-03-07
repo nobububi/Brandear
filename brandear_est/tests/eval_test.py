@@ -1,6 +1,6 @@
 import numpy as np
 
-from brandear_est.eval import *
+from brandear_est.evals import *
 
 
 def test_calc_ndcg():

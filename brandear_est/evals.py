@@ -6,6 +6,14 @@ from .utils import *
 from .preprocess import *
 
 
+def stack_target_actions(target_actions):
+    watch_target = target_actions.query("(watch_actioned == 1)")[["KaiinID", "AuctionID"]]
+    bid_target = target_actions.query("(bid_actioned == 1)")[["KaiinID", "AuctionID"]]
+    watch_target["score"] = 1
+    bid_target["score"] = 2
+    stacked_target_actions = pd.concat([watch_target, bid_target], sort=False)
+    return stacked_target_actions
+
 def dcg_at_k(r, k):
     r = np.asfarray(r)[:k]
     return np.sum((2 ** r - 1) / np.log2(np.arange(2, r.size + 2)))
@@ -18,7 +26,7 @@ def ndcg_at_k(r, k):
     return dcg_at_k(r, k) / dcg_max
 
 
-def calc_ndcg(y_true, y_pred, k=20):
+def calc_dcgs(y_true, y_pred, k=20):
     y_pred_cp = y_pred.copy()
 
     actione_true = stack_target_actions(y_true)
@@ -35,12 +43,16 @@ def calc_ndcg(y_true, y_pred, k=20):
 
     scored_actiones = (
         pd.concat([scored_pred, unchoiced_actiones], sort=False)
-            .sort_values(["KaiinID", "rank"], ascending=["True", "True"]))
+        .sort_values(["KaiinID", "rank"], ascending=["True", "True"]))
 
     dcgs = scored_actiones.groupby("KaiinID")["score"].apply(lambda s: ndcg_at_k(s.tolist(), k=20))
-    ndcg = dcgs.mean()
 
-    return ndcg
+    return dcgs
+
+
+def calc_ndcg(y_true, y_pred, k=20):
+    dcgs = calc_dcgs(y_true, y_pred, k=20)
+    return dcgs.mean()
 
 
 def plot_roc_curve(y_true, y_pred):

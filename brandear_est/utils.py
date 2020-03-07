@@ -2,6 +2,8 @@ import re
 import datetime
 import os
 
+import joblib
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 import numpy as np
 
@@ -15,6 +17,18 @@ for var_name in dir():
 var_infos =  pd.DataFrame({"var_name": var_names, "var_size": var_sizes}).sort_values("var_size", ascending=False)
 var_infos
 """
+
+
+def df2comp_pkl(df, output_dir, filename):
+    os.makedirs(output_dir, exist_ok=True)
+    with open(os.path.join(output_dir, filename), mode="wb") as f:
+        joblib.dump(df, f, compress=3)
+
+
+def read_comp_pkl(path):
+    with open(path, mode="rb") as f:
+        retval = joblib.load(f)
+    return retval
 
 
 def to_datetime(df):
