@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
+from sklearn.ensemble import RandomForestClassifier as RFC
 
 
-class LgbBinaryClassifier():
+class LgbBinaryClassifier:
     def __init__(self, params=None):
         self.model = None
 
@@ -43,7 +44,21 @@ class LgbBinaryClassifier():
     def get_model_info(self, dataset):
         importance = pd.DataFrame(
             self.model.feature_importance(),
-            index=(dataset.drop().columns),
+            index=dataset.drop().columns,
             columns=['importance']
         )
         return importance
+
+
+class RfcBinaryClassifier:
+    def __init__(self, params=None):
+        self.model = None
+
+    def train(self, train_dataset, valid_dataset=None, desc=False):
+        self.model = RFC(random_state=1, n_jobs=-1).fit(
+            X=train_dataset.drop().replace(np.inf, np.nan).fillna(0),
+            y=train_dataset.get_target()
+        )
+
+    def predict(self, dataset):
+        return self.model.predict_proba(dataset.drop().replace(np.inf, np.nan).fillna(0))[:, 1]

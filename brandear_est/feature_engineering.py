@@ -24,72 +24,6 @@ def add_datepart(df: pd.DataFrame, field_name: str,
     return df_datepart
 
 
-def add_features(dataset_base, watch, bid, auction, period):
-    # 特徴量追加部分
-    dataset = dataset_base.merge(auction, on="AuctionID")
-    watch_auc = watch.merge(auction, on="AuctionID")
-    bid_auc = bid.merge(auction, on="AuctionID")
-
-    col_sets = [["KaiinID", "ShouhinID"], ["KaiinID", "BrandID"],
-                ["KaiinID", "GenreGroupID"], ["KaiinID", "LineID"]]
-
-    dataset = add_value_counts(
-        dataset=dataset,
-        feature_df=watch_auc,
-        colsets=col_sets,
-        prefix="watch",
-        oldest_dtime=period["oldest"],
-        time_col="TourokuDate"
-    )
-    
-    dataset = add_value_counts(
-        dataset=dataset,
-        feature_df=bid_auc,
-        colsets=col_sets,
-        prefix="bid",
-        oldest_dtime=period["oldest"],
-        time_col="ShudouNyuusatsuDate"
-    )
-
-    drop_cols = ["ShouhinShubetsuID", "ShouhinID", "BrandID", "GenreID", "GenreGroupID", "LineID"]
-    dataset = dataset.drop(drop_cols, axis=1).fillna(-1)
-
-    return dataset
-
-
-def add_features(dataset_base, watch, bid, auction, period):
-    # 特徴量追加部分
-    dataset = dataset_base.merge(auction, on="AuctionID")
-    watch_auc = watch.merge(auction, on="AuctionID")
-    bid_auc = bid.merge(auction, on="AuctionID")
-
-    # dataset = add_time_features(dataset, watch_auc, "TourokuDate", "watch", period["oldest"])
-    # dataset = add_time_features(dataset, bid_auc, "ShudouNyuusatsuDate", "bid", period["oldest"])
-
-    col_sets = [["AuctionID"], ["ShouhinID"], ["BrandID"], ["LineID"], ["KaiinID", "ShouhinID"],
-                         ["KaiinID", "BrandID"], ["KaiinID", "GenreGroupID"], ["KaiinID", "LineID"]]
-    dataset = add_value_counts(
-        dataset=dataset,
-        feature_df=watch_auc,
-        colsets=col_sets,
-        prefix="watch",
-        oldest_dtime=period["oldest"],
-        time_col="TourokuDate"
-    )
-    dataset = add_value_counts(
-        dataset=dataset,
-        feature_df=bid_auc,
-        colsets=col_sets,
-        prefix="bid",
-        oldest_dtime=period["oldest"],
-        time_col="ShudouNyuusatsuDate"
-    )
-
-    drop_cols = ["ShouhinShubetsuID", "ShouhinID", "BrandID", "GenreID", "GenreGroupID", "LineID"]
-    dataset = dataset.drop(drop_cols, axis=1).fillna(-1)
-
-    return dataset
-
 def add_time_features(dataset, feature_df, time_col, prefix, oldest_dtime):
     tmp_time_col = f"Tmp{time_col}Delta"
     key_cols = ["KaiinID", "AuctionID"]
@@ -105,11 +39,15 @@ def add_time_features(dataset, feature_df, time_col, prefix, oldest_dtime):
     return output
 
 
-def cross_counts(df, col_set):
-    if isinstance(col_set, str):
+def cross_counts(df, col_set, col_name=None):
+    if col_name is not None:
+        cnt_col_name = col_name
+    elif isinstance(col_set, str):
         cnt_col_name = col_set + "_cnt"
     elif isinstance(col_set, list):
         cnt_col_name = "_".join(col_set) + "_cnt"
+    else:
+        raise ValueError
     cnts = (
         df.groupby(col_set, as_index=False).size().reset_index()
         .rename(columns={0: cnt_col_name})

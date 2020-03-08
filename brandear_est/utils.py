@@ -3,7 +3,6 @@ import datetime
 import os
 
 import joblib
-from dateutil.relativedelta import relativedelta
 import pandas as pd
 import numpy as np
 
@@ -83,7 +82,9 @@ def reduce_mem_usage(df, verbose=True):
                 else:
                     df[col] = df[col].astype(np.float64)
     end_mem = df.memory_usage().sum() / 1024**2
-    if verbose: print('Mem. usage decreased to {:5.2f} Mb ({:.1f}% reduction)'.format(end_mem, 100 * (start_mem - end_mem) / start_mem))
+    if verbose:
+        print('Mem. usage decreased to {:5.2f} Mb ({:.1f}% reduction)'
+              .format(end_mem, 100 * (start_mem - end_mem) / start_mem))
     return df
 
 
@@ -95,24 +96,7 @@ def drop(df, cols):
 
 
 def left_anti_join(left_df, right_df, left_key, right_key):
-    """二つのDataFrameを指定のキーで結合し、左側のDataFrameのうち、右側のDataFrameにキーが存在しないレコードのみを返す関数
 
-    Parameters
-    ----------
-    left_df : DataFrame
-        左側のDataFrame
-    right_df : DataFrame
-        右側のDataFrame
-    left_key : str or List[str]
-        左側の結合キーのカラム名（またはそのリスト）
-    right_key : str or List[str]
-        左側の結合キーのカラム名（またはそのリスト）
-
-    Returns
-    -------
-    difference_df : DataFrame
-
-    """
     left_anti_df = left_df.merge(
         right=right_df[right_key],
         how="left",
@@ -128,4 +112,3 @@ def cross_join(df1, df2):
     df2["cross_flg"] = 0
     cross_df = df1.merge(df2, on=["cross_flg"], how="outer").drop("cross_flg", axis=1)
     return cross_df
-

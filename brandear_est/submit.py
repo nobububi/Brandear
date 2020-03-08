@@ -5,14 +5,14 @@ import pandas as pd
 
 def comple_submit_auc(df):
     target_users = df.groupby("KaiinID", as_index=False).count().query("score < 20")["KaiinID"].tolist()
-    if target_users == []:
+    if not target_users:
         return df
     else:
         candidate_aucs = (
             df[["AuctionID", "score"]]
             .groupby("AuctionID", as_index=False).mean().sort_values("score", ascending=False).iloc[:40, :]
         )
-        candidate_aucs["score"] -=  999
+        candidate_aucs["score"] -= 999
         buf = []
         for user in target_users:
             candidate_aucs_tmp = candidate_aucs.copy()
@@ -45,6 +45,7 @@ def get_cheat_pred(data, target_actions):
         .fillna(0).sort_values(["KaiinID", "score"], ascending=["True", "False"]))
     return cheat_pred
 
+
 def stack_target_actions(target_actions):
     watch_target = target_actions.query("(watch_actioned == 1)")[["KaiinID", "AuctionID"]]
     bid_target = target_actions.query("(bid_actioned == 1)")[["KaiinID", "AuctionID"]]
@@ -52,4 +53,3 @@ def stack_target_actions(target_actions):
     bid_target["score"] = 2
     stacked_target_actions = pd.concat([watch_target, bid_target], sort=False)
     return stacked_target_actions
-

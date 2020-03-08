@@ -59,8 +59,8 @@ def build_dataset_input(auction, bid_success, watch, bid, period, dset_type, out
         prefix = dtime_feat_conf[0]
         last_action = (
             dtime_feat_conf[2][["AuctionID", dtime_feat_conf[1]]]
-                .groupby("AuctionID", as_index=False).min()
-                .rename(columns={dtime_feat_conf[1]: f"{prefix}_elapsed_days"})
+            .groupby("AuctionID", as_index=False).min()
+            .rename(columns={dtime_feat_conf[1]: f"{prefix}_elapsed_days"})
         )
         last_action[f"{prefix}_elapsed_days"] = last_action[f"{prefix}_elapsed_days"].swifter.apply(
             lambda d: (oldest_dtime - d).days)

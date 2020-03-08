@@ -3,6 +3,11 @@ import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.model_selection import train_test_split
 
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
+
 
 class DataSet:
     """
@@ -70,13 +75,13 @@ class DataSet:
         positive_targets = dataset.data[dataset.data[dataset.target_col] == 1]
         sampled_negative = (
             dataset.data[dataset.data[dataset.target_col] != 1]
-                .sample(n=positive_targets.shape[0] * rate)
+            .sample(n=positive_targets.shape[0] * rate)
         )
         sampled_data = pd.concat([positive_targets, sampled_negative])
         return cls(data=sampled_data, drop_cols=dataset.drop_cols, target_col=dataset.target_col)
 
     @classmethod
-    def train_test_split(cls, dataset, test_size=0.2):
+    def train_test_split(cls, dataset):
         train_data, test_data = train_test_split(dataset.data)
         return (cls(data=train_data, drop_cols=dataset.drop_cols, target_col=dataset.target_col),
                 cls(data=test_data, drop_cols=dataset.drop_cols, target_col=dataset.target_col))

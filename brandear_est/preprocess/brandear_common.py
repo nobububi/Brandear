@@ -51,9 +51,9 @@ def extract_target_actions(watch, bid, period):
 
     target_actions = (
         watch_actioned
-            .merge(bid_actioned, on=["KaiinID", "AuctionID"], how="outer")
-            .drop_duplicates()
-            .fillna(0)
+        .merge(bid_actioned, on=["KaiinID", "AuctionID"], how="outer")
+        .drop_duplicates()
+        .fillna(0)
     )
     return target_actions
 
@@ -93,6 +93,6 @@ def extract_recent_data(df, date_col, base_dtime, days):
 def extract_similar_aucs(target_users, auction, actions, period):
     similar_aucs = (
         actions.merge(target_users, on="KaiinID", how="inner")
-            .merge(auction, on="ShouhinID")
+        .merge(auction, on="ShouhinID")
     )
     return similar_aucs

@@ -6,7 +6,6 @@ from .brandear_common import *
 
 
 def cross_auc_users(actions, auc_dataset, period, target_users, target_col, dset_type, target_actions):
-    users_auc_cands_cross = None
 
     if dset_type == "submission":
         # 有望オークションと、ユーザーとのクロスジョインから候補作成
@@ -52,8 +51,6 @@ def build_target_candidate(dataset_inputs, valid_auc_th, auc_attr_col, data_dict
             .drop_duplicates().drop("AuctionID", axis=1)
         )
 
-        targets = None
-
         if dset_type != "submission":
             targets = target_actions.sort_values("KaiinID").reset_index(drop=True)[["KaiinID"]].drop_duplicates()
         else:
@@ -62,7 +59,8 @@ def build_target_candidate(dataset_inputs, valid_auc_th, auc_attr_col, data_dict
         for g, split_targets in targets.groupby(targets["KaiinID"] // 5000):
 
             print(dset_type, "分割", g, "番目")
-            if (g > 11) & (dset_type == "valid_for_train"): continue
+            if (g > 11) & (dset_type == "valid_for_train"):
+                continue
 
             splited_candidates = cross_auc_users(
                 actions=actions,
@@ -76,13 +74,13 @@ def build_target_candidate(dataset_inputs, valid_auc_th, auc_attr_col, data_dict
 
             splited_candidates_feat = (
                 splited_candidates
-                    .merge(w_k_cnts, on="KaiinID", how="left")
-                    .merge(w_ka_cnts, on=["KaiinID", "AuctionID"], how="left")
-                    .merge(w_ks_cnts, on=["KaiinID", "ShouhinID"], how="left")
-                    .merge(w_kb_cnts, on=["KaiinID", "BrandID"], how="left")
-                    .merge(w_ki_cnts, on=["KaiinID", "ItemShouID"], how="left")
-                    .drop(["ShouhinID", "BrandID", "ItemShouID"], axis=1)
-                    .fillna(0)
+                .merge(w_k_cnts, on="KaiinID", how="left")
+                .merge(w_ka_cnts, on=["KaiinID", "AuctionID"], how="left")
+                .merge(w_ks_cnts, on=["KaiinID", "ShouhinID"], how="left")
+                .merge(w_kb_cnts, on=["KaiinID", "BrandID"], how="left")
+                .merge(w_ki_cnts, on=["KaiinID", "ItemShouID"], how="left")
+                .drop(["ShouhinID", "BrandID", "ItemShouID"], axis=1)
+                .fillna(0)
             )
 
             splited_candidates_feat["BrandID_KaiinID_rate"] = (
